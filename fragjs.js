@@ -43,11 +43,11 @@ function fragJS(text) {
 	/* Paragraph Level Fragmentation */
 	function splitToParagraphs() {
 		htmlText = text.replace(/(.)\n(.)/g, "$1<br />$2"); // single newlines to breaks
-		htmlText = htmlText.replace(/^(.+)\n?/mg, "<p>$1</p>"); // multiple newlines to paragraphs
+		htmlText = htmlText.replace(/^(.+)$/mg, "<p>$1</p>"); // multiple newlines to paragraphs
 		htmlText = htmlText.replace(/^$/mg, "<br />"); // empty lines to breaks
 		htmlText = htmlText.replace(/<p>/g, "<p>´´``pBegins´´``");
 		htmlText = htmlText.replace(/<\/p>/g, "´´``pEnds´´``</p>");
-		htmlText = htmlText.replace(/<br \/>/g, "´´``pEnds´´``<br />´´``pBegins´´``");
+		htmlText = htmlText.replace(/(.)<br \/>(.)/g, "$1´´``pEnds´´``<br />´´``pBegins´´``$2");
 		htmlText = htmlText.replace(/´´``pBegins´´``(\s*)´´``pEnds´´``/gi, '$1'); // remove unnecessary spans
 		htmlText = htmlText.replace(/´´``pBegins´´``(\s*)/gi, '$1<tempspanp class="fragjs-p">');
 		htmlText = htmlText.replace(/(\s*)´´``pEnds´´``/gi, '<\/tempspanp>$1');
