@@ -11,12 +11,12 @@ function fragJS(text) {
 
 	text = text.trim();
 	if (!text) throw "No text";
-	
+
 	// normalize newlines
 	text = text.replace(/\r\n/g, "\n");
 	text = text.replace(/\r/g, "\n");
 
-	
+
 	/* Create an iframe for DOM manipulations */
 	fragJSFrame = document.createElement('iframe');
 	document.body.appendChild(fragJSFrame);
@@ -27,19 +27,19 @@ function fragJS(text) {
 	fragJSFrameHead = fragJSFrameWindow.document.head;
 	fragJSFrameBody = fragJSFrameWindow.document.body;
 
-	
+
 	splitToParagraphs();
 	splitParagraphsToSentences();
 	splitSentencesToWords();
 
-	
+
 	var bodyMarkup = fragJSFrameBody.innerHTML;
 	document.body.removeChild(fragJSFrame);
 	var xhtml = generateXHTML(bodyMarkup);
 	return xhtml;
-	
 
-	
+
+
 	/* Paragraph Level Fragmentation */
 	function splitToParagraphs() {
 		htmlText = text.replace(/(.)\n(.)/g, "$1<br />$2"); // single newlines to breaks
@@ -62,26 +62,26 @@ function fragJS(text) {
 		var allParagraphsArray = [];
 		for (i=0; i<allParagraphSpans.length; i++) {
 			allParagraphsArray.push(allParagraphSpans[i]);
-		}	
+		}
 		for (i=0; i<allParagraphsArray.length; i++) {
-		
+
 			var paragraphText = allParagraphsArray[i].textContent;
 
 			// first some corrections
-			paragraphText = paragraphText.replace(/(\s)([^\s])/g, capitalCheck); // rule out lower case letters as beginnings 
-			paragraphText = paragraphText.replace(/,\s/g, ',´´``ws´´``'); // rule out commas as ends 
-			paragraphText = paragraphText.replace(/\s([\.!?])/g, '´´``ws´´``$1'); // rule out spaces before punctuation  
-			paragraphText = paragraphText.replace(/\b(([^0-9])\.\s)(([^0-9])\.\s*)+[\s\b]/g, fixInitials); // fix name initials  
+			paragraphText = paragraphText.replace(/(\s)([^\s])/g, capitalCheck); // rule out lower case letters as beginnings
+			paragraphText = paragraphText.replace(/,\s/g, ',´´``ws´´``'); // rule out commas as ends
+			paragraphText = paragraphText.replace(/\s([\.!?])/g, '´´``ws´´``$1'); // rule out spaces before punctuation
+			paragraphText = paragraphText.replace(/\b(([^0-9])\.\s)(([^0-9])\.\s*)+[\s\b]/g, fixInitials); // fix name initials
 			paragraphText = paragraphText.replace(/(Mr|Dr|Ms|Mrs|St|Sr|Rev)\.\s/g, '$1.´´``ws´´``'); // rule out title abbr.
 			paragraphText = paragraphText.replace(/No\.\s([0-9])/g, 'No.´´``ws´´``$1'); // rule out "No."
-			
+
 			// now split
-			paragraphText = paragraphText.replace(/([\.!?]["'”’»\]\)]?)(\s+)/g, '$1´´``sEnds´´``$2´´``sBegins´´``'); 
+			paragraphText = paragraphText.replace(/([\.!?]["'”’»\]\)]?)(\s+)/g, '$1´´``sEnds´´``$2´´``sBegins´´``');
 			paragraphText = paragraphText.replace(/([\.!?])—(.)/g, emDashCapitalCheck); // split sentences that are followed by em-dash instead of space
 
 			// beginnings and ends
 			paragraphText = paragraphText.replace(/^([^]+)$/g, "´´``sBegins´´``$1´´``sEnds´´``");
-			
+
 			allParagraphsArray[i].textContent = paragraphText;
 		}
 		htmlText = fragJSFrameBody.innerHTML;
@@ -89,15 +89,15 @@ function fragJS(text) {
 		htmlText = htmlText.replace(/´´``sBegins´´``(\s*)´´``sEnds´´``/g, '$1'); // remove whitespace-only spans
 		htmlText = htmlText.replace(/´´``sBegins´´``(\s*)/g, '$1<tempspans class="fragjs-s">');
 		htmlText = htmlText.replace(/´´``ws´´``/g, ' ');
-		
-		fragJSFrameBody.innerHTML = htmlText.replace(/(\s*)´´``sEnds´´``/gi, '<\/tempspans>$1');	
+
+		fragJSFrameBody.innerHTML = htmlText.replace(/(\s*)´´``sEnds´´``/gi, '<\/tempspans>$1');
 		htmlText = fragJSFrameBody.innerHTML; //this step is necessary for auto-corrections by the browser
 		fragJSFrameBody.innerHTML = htmlText;
 		removeEmptyFragments("s");
 		enumerateFragments("s");
 	}
 
-	
+
 	function splitSentencesToWords() {
 
 		allSentenceSpans = fragJSFrameBody.getElementsByClassName("fragjs-s");
@@ -105,30 +105,34 @@ function fragJS(text) {
 		for (i=0; i<allSentenceSpans.length; i++) {
 			allSentencesArray.push(allSentenceSpans[i]);
 		}
-		
+
 		for (i=0; i<allSentencesArray.length; i++) {
 
 			sentenceText = allSentencesArray[i].textContent;
-			
+
 			// first some corrections
-			sentenceText = sentenceText.replace(/\s([\.!?])/g, '´´``ws´´``$1'); // rule out spaces before punctuation  
+			sentenceText = sentenceText.replace(/\s([\.!?])/g, '´´``ws´´``$1'); // rule out spaces before punctuation
 			// now split
 			sentenceText = sentenceText.replace(/(\s)/g, '´´``wEnds´´``$1´´``wBegins´´``'); // divide
 			sentenceText = sentenceText.replace(/([^\s])([—])([^\s])/g, '$1´´``wEnds´´``$2´´``wBegins´´``$3');  // divide at em dash
-				
+
 			// beginnings and ends
-			sentenceText = sentenceText.replace(/^([^]+)$/g, "´´``wBegins´´``$1´´``wEnds´´``");			
-				
+			sentenceText = sentenceText.replace(/^([^]+)$/g, "´´``wBegins´´``$1´´``wEnds´´``");
+
 			allSentencesArray[i].textContent = sentenceText;
 
 		}
-		
+
 
 		htmlText = fragJSFrameBody.innerHTML;
-		htmlText = htmlText.replace(/´´``ws´´``/g, ' ');	
-		htmlText = htmlText.replace(/´´``wBegins´´``([,;:.!?'"“”‘’«»*\-—\(\)\[\]\}\{\s]*)/g, '$1<tempspanw class="fragjs-w">');
-		htmlText = htmlText.replace(/([,;:.!?'"“”‘’«»*\-—\(\)\[\]\}\{\s]*)´´``wEnds´´``/g, '<\/tempspanw>$1');
-		htmlText = htmlText.replace(/(&(#[0-9]+|[a-z]+))<\/tempspanw>;/gi, '$1;<\/tempspanw>'); // fix for html entities
+		htmlText = htmlText.replace(/´´``ws´´``/g, ' ');
+		
+		// htmlText = htmlText.replace(/´´``wBegins´´``([,;:.!?'"“”‘’«»*\-—\(\)\[\]\}\{\s]*)/g, '$1<tempspanw class="fragjs-w">');
+		// htmlText = htmlText.replace(/([,;:.!?'"“”‘’«»*\-—\(\)\[\]\}\{\s]*)´´``wEnds´´``/g, '<\/tempspanw>$1');
+		// htmlText = htmlText.replace(/(&(#[0-9]+|[a-z]+))<\/tempspanw>;/gi, '$1;<\/tempspanw>'); // fix for html entities
+
+		htmlText = htmlText.replace(/´´``wBegins´´``/g, '<tempspanw class="fragjs-w">');
+		htmlText = htmlText.replace(/´´``wEnds´´``/g, '<\/tempspanw>');
 
 		htmlText = htmlText.replace(/<tempspanw class="fragjs-w"><\/tempspanw>/gi, '');
 
@@ -136,7 +140,7 @@ function fragJS(text) {
 		htmlText = fragJSFrameBody.innerHTML; //this conversion is necessary for auto-corrections by the browser
 		fragJSFrameBody.innerHTML = htmlText;
 		removeEmptyFragments("w");
-		enumerateFragments("w");		
+		enumerateFragments("w");
 	}
 
 
@@ -145,7 +149,7 @@ function fragJS(text) {
 			return '´´``ws´´``' + p2;
 		}
 		else return match;
-	}		
+	}
 	function abbrCheck(match, p1, p2, p3, p4, p5){
 		if(p1.toUpperCase() === p1.toLowerCase() && p2 !== p2.toLowerCase() && p4 !== p4.toLowerCase() && p5 !== p5.toUpperCase()){
 			return p1 + p2 + ".´´``sEnds´´`` ´´``sBegins´´``" + p3 + p4 +p5;
@@ -170,8 +174,8 @@ function fragJS(text) {
 	}
 
 
-	
-	
+
+
    /* Generate fragJS XHTML output */
     function generateXHTML(text) {
 		text = text.replace(/&nbsp;/gi, ' '); // normalize nbsp
